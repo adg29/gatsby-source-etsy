@@ -24,7 +24,7 @@ exports.sourceNodes = async (
 
   // * Get the listings
   const { results: listings } = await etsyFetch(
-    `${ETSY_BASE_URL}/shops/${shopId}/listings/featured?api_key=${apiKey}${language ? `&language=${language}` : ''}`
+    `${ETSY_BASE_URL}/shops/${shopId}/listings/active?api_key=${apiKey}${language ? `&limit=11&language=${language}` : ''}`
   ).then(res => res.json())
 
   // * Process listings
@@ -67,9 +67,12 @@ exports.sourceNodes = async (
     const { results: images } = await etsyFetch(
       `${ETSY_BASE_URL}/listings/${listing_id}/images?api_key=${apiKey}`
     ).then(res => res.json())
-
+      reporter.info(`processing listing images for ${listing_id}`)
+      reporter.info(`processing listing images for ${images.length}`)
     // * Process images
-    const imageNodePromises = images.map(async image => {
+    const imageNodePromises = images.map(image => {
+      return new Promise(async (resolve, reject) => {
+
       // * Create a node for each image
       const imageNodeId = `${listingNodeId}_image_${image.listing_image_id}`
       await createNode({
@@ -81,12 +84,14 @@ exports.sourceNodes = async (
         },
         ...image,
       })
+      reporter.info(`createdNode EtsyListingImage ${imageNodeId}`)
       const listingNode = getNode(listingNodeId)
       const imageNode = getNode(imageNodeId)
-      createParentChildLink({
+      await createParentChildLink({
         parent: listingNode,
         child: imageNode,
       })
+    //   console.log(`createdParentChildLink ${listingNodeId} <> ${imageNodeId}`)
       // * Create a child node for each image file
       const url = image.url_fullxfull
       const fileNode = await createRemoteFileNode({
@@ -97,11 +102,15 @@ exports.sourceNodes = async (
         createNode,
         createNodeId,
       })
-      createParentChildLink({
+      await createParentChildLink({
         parent: imageNode,
         child: fileNode,
       })
-      return imageNode
+      reporter.info(`createdRemoteFileNode parent ${imageNodeId}`)
+      const imageNodeWithFile = getNode(imageNodeId)
+      console.log(imageNodeWithFile)
+      resolve()
+      })
     })
     const imageNodes = await Promise.all(imageNodePromises)
     const imageNodeIds = imageNodes.map(node => node.id)
