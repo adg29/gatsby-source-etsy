@@ -24,7 +24,7 @@ exports.sourceNodes = async (
 
   // * Get the listings
   const { results: listings } = await etsyFetch(
-    `${ETSY_BASE_URL}/shops/${shopId}/listings/active?api_key=${apiKey}${language ? `&limit=11&language=${language}` : ''}`
+    `${ETSY_BASE_URL}/shops/${shopId}/listings/active?api_key=${apiKey}${language ? `&language=${language}` : ''}`
   ).then(res => res.json())
 
   // * Process listings
