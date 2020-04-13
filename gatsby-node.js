@@ -70,6 +70,7 @@ exports.sourceNodes = async (
     // * Process images
     const imageNodePromises = images.map(image => {
       return new Promise(async (resolve, reject) => {
+
         // * Create a node for each image
         const imageNodeId = `${listingNodeId}_image_${image.listing_image_id}`
         await createNode({
@@ -88,7 +89,7 @@ exports.sourceNodes = async (
           child: imageNode,
         })
         // * Create a child node for each image file
-        const url = image.url_fullxfull
+        const url = image.url_fullxfull + `?lid=${listing_id}`
         const fileNode = await createRemoteFileNode({
           url,
           parentNodeId: imageNodeId,
@@ -102,14 +103,16 @@ exports.sourceNodes = async (
           child: fileNode,
         })
         const imageNodeWithFile = getNode(imageNodeId)
-        resolve()
+        resolve(imageNodeWithFile)
       })
     })
     const imageNodes = await Promise.all(imageNodePromises)
+    const imageNodeIds = imageNodes.map(node => node.id)
 
     // * Cache the listing node id and image node ids
     await cache.set(`cached-${listingNodeId}`, {
       cachedListingNodeId: listingNodeId,
+      cachedImageNodeIds: imageNodeIds,
     })
   })
   return Promise.all(listingProcessingJobs)
