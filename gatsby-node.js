@@ -67,8 +67,6 @@ exports.sourceNodes = async (
     const { results: images } = await etsyFetch(
       `${ETSY_BASE_URL}/listings/${listing_id}/images?api_key=${apiKey}`
     ).then(res => res.json())
-      reporter.info(`processing listing images for ${listing_id}`)
-      reporter.info(`processing listing images for ${images.length}`)
     // * Process images
     const imageNodePromises = images.map(image => {
       return new Promise(async (resolve, reject) => {
@@ -84,14 +82,12 @@ exports.sourceNodes = async (
         },
         ...image,
       })
-      reporter.info(`createdNode EtsyListingImage ${imageNodeId}`)
       const listingNode = getNode(listingNodeId)
       const imageNode = getNode(imageNodeId)
       await createParentChildLink({
         parent: listingNode,
         child: imageNode,
       })
-    //   console.log(`createdParentChildLink ${listingNodeId} <> ${imageNodeId}`)
       // * Create a child node for each image file
       const url = image.url_fullxfull
       const fileNode = await createRemoteFileNode({
@@ -106,10 +102,8 @@ exports.sourceNodes = async (
         parent: imageNode,
         child: fileNode,
       })
-      reporter.info(`createdRemoteFileNode parent ${imageNodeId}`)
-      const imageNodeWithFile = getNode(imageNodeId)
-      console.log(imageNodeWithFile)
-      resolve()
+      getNode(imageNodeId)
+      resolve(imageNode)
       })
     })
     const imageNodes = await Promise.all(imageNodePromises)
