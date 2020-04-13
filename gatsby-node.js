@@ -70,40 +70,39 @@ exports.sourceNodes = async (
     // * Process images
     const imageNodePromises = images.map(image => {
       return new Promise(async (resolve, reject) => {
-
-      // * Create a node for each image
-      const imageNodeId = `${listingNodeId}_image_${image.listing_image_id}`
-      await createNode({
-        id: imageNodeId,
-        parent: listingNodeId,
-        internal: {
-          type: 'EtsyListingImage',
-          contentDigest: createContentDigest(image),
-        },
-        ...image,
-      })
-      const listingNode = getNode(listingNodeId)
-      const imageNode = getNode(imageNodeId)
-      await createParentChildLink({
-        parent: listingNode,
-        child: imageNode,
-      })
-      // * Create a child node for each image file
-      const url = image.url_fullxfull
-      const fileNode = await createRemoteFileNode({
-        url,
-        parentNodeId: imageNodeId,
-        store,
-        cache,
-        createNode,
-        createNodeId,
-      })
-      await createParentChildLink({
-        parent: imageNode,
-        child: fileNode,
-      })
-      const imageNodeWithFile = getNode(imageNodeId)
-      resolve()
+        // * Create a node for each image
+        const imageNodeId = `${listingNodeId}_image_${image.listing_image_id}`
+        await createNode({
+          id: imageNodeId,
+          parent: listingNodeId,
+          internal: {
+            type: 'EtsyListingImage',
+            contentDigest: createContentDigest(image),
+          },
+          ...image,
+        })
+        const listingNode = getNode(listingNodeId)
+        const imageNode = getNode(imageNodeId)
+        await createParentChildLink({
+          parent: listingNode,
+          child: imageNode,
+        })
+        // * Create a child node for each image file
+        const url = image.url_fullxfull
+        const fileNode = await createRemoteFileNode({
+          url,
+          parentNodeId: imageNodeId,
+          store,
+          cache,
+          createNode,
+          createNodeId,
+        })
+        await createParentChildLink({
+          parent: imageNode,
+          child: fileNode,
+        })
+        const imageNodeWithFile = getNode(imageNodeId)
+        resolve()
       })
     })
     const imageNodes = await Promise.all(imageNodePromises)
