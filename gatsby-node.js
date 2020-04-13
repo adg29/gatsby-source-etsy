@@ -102,17 +102,15 @@ exports.sourceNodes = async (
         parent: imageNode,
         child: fileNode,
       })
-      getNode(imageNodeId)
-      resolve(imageNode)
+      const imageNodeWithFile = getNode(imageNodeId)
+      resolve()
       })
     })
     const imageNodes = await Promise.all(imageNodePromises)
-    const imageNodeIds = imageNodes.map(node => node.id)
 
     // * Cache the listing node id and image node ids
     await cache.set(`cached-${listingNodeId}`, {
       cachedListingNodeId: listingNodeId,
-      cachedImageNodeIds: imageNodeIds,
     })
   })
   return Promise.all(listingProcessingJobs)
