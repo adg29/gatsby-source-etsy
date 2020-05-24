@@ -109,10 +109,60 @@ exports.sourceNodes = async (
     const imageNodes = await Promise.all(imageNodePromises)
     const imageNodeIds = imageNodes.map(node => node.id)
 
+    async function processListingInventory({listing_id, listingNodeId}) {
+      // * Get inventory metadata for the listing
+      const apiFetch = await etsyFetch(
+        `${ETSY_BASE_URL}/listings/${listing_id}/inventory?api_key=${apiKey}`
+      ).then(res => res.json())
+      // * Process products
+      if (apiFetch) {
+        const { results: inventory } = apiFetch
+        
+        const productNodePromises = inventory.products.map(product => {
+          return new Promise(async (resolve, reject) => {
+
+            // * Create a node for each image
+            const productNodeId = `${listingNodeId}_product_${product.product_id}`
+            await createNode({
+              id: productNodeId,
+              parent: listingNodeId,
+              internal: {
+                type: 'EtsyListingInventory',
+                contentDigest: createContentDigest(product),
+              },
+              ...product,
+            })
+            const listingNode = await getNode(listingNodeId)
+            const productNode = await getNode(productNodeId)
+            await createParentChildLink({
+              parent: listingNode,
+              child: productNode,
+            })
+            // * Create a child node for each product entry
+            resolve(productNode)
+          })
+        })
+
+        const productNodes = await Promise.all(productNodePromises)
+        const productNodeIds = productNodes.map(node => node.id)
+
+        return Promise.resolve(productNodeIds)
+      }else{
+        return Promise.resolve([])
+      }
+    }
+
+    /** Get Inventory metadata for the listing */
+    const productNodeIds = await processListingInventory({
+      listing_id,
+      listingNodeId
+    })
+
     // * Cache the listing node id and image node ids
     await cache.set(`cached-${listingNodeId}`, {
       cachedListingNodeId: listingNodeId,
       cachedImageNodeIds: imageNodeIds,
+      cachedProductIds: productNodeIds
     })
   })
   return Promise.all(listingProcessingJobs)
